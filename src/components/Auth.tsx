@@ -21,7 +21,8 @@ import LockOutlinedIcon from "@material-ui/icons/LockOutlined";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import { makeStyles } from '@material-ui/core/styles';
 
-import styles from './css/auth.module.css'
+import styles from './css/auth.module.css';
+import { updateUserProfile } from '../features/userSlice'
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -57,16 +58,54 @@ const useStyles = makeStyles((theme) => ({
 
 const Auth: React.FC = () => {
   const classes = useStyles();
+  const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [userName, setUserName] = useState('');
+  const [avatarImg, setAvatarImg] = useState< File | null >(null);
   const [isLogin, setIsLogin] = useState(true);
+
+  const onCHangeImageHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if(e.target.files![0]) {
+      setAvatarImg(e.target.files![0]);
+      e.target.value = '';
+    }
+  }
 
   const signinEmail = async () => {
     await auth.signInWithEmailAndPassword(email, password);
   }
 
   const signupEmail = async () => {
-    await auth.createUserWithEmailAndPassword(email, password);
+    const authUser = await auth.createUserWithEmailAndPassword(email, password);
+    let url = '';
+    if(avatarImg) {
+
+      // set random char to fileName
+      const S =
+        "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const N = 16;
+      const randomChar = Array.from(crypto.getRandomValues(new Uint32Array(N)))
+        .map((n) => S[n % S.length])
+        .join("");
+      const fileName = randomChar + "_" + avatarImg.name;
+
+      // set file to firebase
+      await storage.ref(`avatars/${fileName}`).put(avatarImg);
+      url = await storage.ref('avatars').child(fileName).getDownloadURL();
+
+      // set file to user
+      await authUser.user?.updateProfile({
+        displayName: userName,
+        photoURL: url
+      })
+
+      // update state
+      dispatch(updateUserProfile({
+        displayName: userName,
+        photoURL: url
+      }));
+    }
   }
 
   const signinGoogle = async () => {
@@ -144,7 +183,7 @@ const Auth: React.FC = () => {
               <Grid item xs>
                 <span className={styles.login_reset}>Forgot passord?</span>
               </Grid>
-              <Grid item xs>
+              <Grid item>
                 <span 
                   className={styles.login_toggleMode}
                   onClick={() => setIsLogin(!isLogin)}
