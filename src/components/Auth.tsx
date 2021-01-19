@@ -12,7 +12,8 @@ import {
   Paper,
   Box,
   Grid,
-  Typography
+  Typography,
+  IconButton
 } from '@material-ui/core'
 import SendIcon from "@material-ui/icons/Send";
 import CameraIcon from "@material-ui/icons/Camera";
@@ -65,7 +66,7 @@ const Auth: React.FC = () => {
   const [avatarImg, setAvatarImg] = useState< File | null >(null);
   const [isLogin, setIsLogin] = useState(true);
 
-  const onCHangeImageHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onChangeImageHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
     if(e.target.files![0]) {
       setAvatarImg(e.target.files![0]);
       e.target.value = '';
@@ -90,7 +91,7 @@ const Auth: React.FC = () => {
         .join("");
       const fileName = randomChar + "_" + avatarImg.name;
 
-      // set file to firebase
+      // set file to firebase storage
       await storage.ref(`avatars/${fileName}`).put(avatarImg);
       url = await storage.ref('avatars').child(fileName).getDownloadURL();
 
@@ -106,7 +107,7 @@ const Auth: React.FC = () => {
         photoURL: url
       }));
     }
-  }
+  };
 
   const signinGoogle = async () => {
     await auth.signInWithPopup(provider).catch((err) => alert(err.message))
@@ -143,6 +144,43 @@ const Auth: React.FC = () => {
             Sign in
           </Typography>
           <form className={classes.form} noValidate>
+            { !isLogin &&
+            <>
+              <TextField
+                variant="outlined"
+                margin="normal"
+                required
+                fullWidth
+                id="username"
+                label="Username"
+                name="username"
+                autoComplete="username"
+                autoFocus
+                value={userName}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setUserName(e.target.value);
+                }}
+              />
+              <Box textAlign="center">
+                <IconButton>
+                  <label>
+                    <AccountCircleIcon
+                      fontSize="large"
+                      className={
+                        avatarImg
+                          ? styles.login_addIconLoaded
+                          : styles.login_addIcon
+                      }
+                    />
+                    <input
+                      className={styles.login_hiddenIcon}
+                      type="file"
+                      onChange={onChangeImageHandler}
+                    />
+                  </label>
+                </IconButton>
+              </Box>
+            </>}
             <TextField
               variant="outlined"
               margin="normal"
@@ -176,6 +214,11 @@ const Auth: React.FC = () => {
               className={classes.submit}
               startIcon={<EmailIcon />}
               onClick={() => formSubmitHandler()}
+              disabled={
+                isLogin
+                  ? !email || password.length < 6
+                  : !userName || !email || password.length < 6 || !avatarImg
+              }
             >
               { isLogin ? 'Login' : 'Register' }
             </Button>
