@@ -7,7 +7,7 @@ import { Avatar, Button, IconButton } from '@material-ui/core'
 import firebase from 'firebase/app'
 import AddPhotoIcon from '@material-ui/icons/AddAPhoto'
 
-const TweetInput = () => {
+const TweetInput: React.FC = () => {
   const user = useSelector(selectUser);
   const [ tweetMsg, setTweetMsg] = useState('');
   const [ tweetImg, setTweetImg ] = useState<File | null>(null);
